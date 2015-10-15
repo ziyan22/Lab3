@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>creative One</title>
+      <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+      <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+      <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+      <script src="paper-full.js"></script>
+  </head>
+<body>
+    <!-- <div id="container" class="dark-container" style="min-width: 310px; height: 400px; margin: 0 auto">
+    </div> -->
+    <canvas id="myCanvas" width="400" height="200" style="border:1px solid #000000;" resize></canvas>
+    <button onclick="start()">Connect</button>
+
+    <script type="text/javascript">
+    var socket = io();
+    paper.install(window);
+    var canvas = document.getElementById("myCanvas");
+    // // Create an empty project and a view for the canvas:
+    paper.setup(canvas);
+    var path1 = new Path.Circle(new Point(200, 100), 50);
+    path1.strokeColor = 'black';
+    path1.fillColor = 'rgb(0,255,255)';
+
+    socket.on('to browser', function(data)
+    {
+        var parsedData = JSON.parse(data);
+        path1.fillColor = posToColor(parsedData);
+        console.log("finishdrawing");
+        paper.view.draw();
+    });
+
+    //Also send some data back once per second
+    window.setInterval(
+        function()
+        {
+            //var msg = "Hello: " + Math.random();
+            //console.log(msg);
+            //socket.emit('to serial', msg);
+        },
+        10000
+    );
+
+    function posToColor(position){
+      var red = 0;
+      var green = 0;
+      var blue = 0;
+      var alpha = 0;
+      alpha = position.sensor/1000;
+
+      if(position.y >= 0){
+        if(position.x >= 0){
+          red = 255;
+          green = parseInt((1020-position.x)/4);
+        }else{
+          red = parseInt((1020+position.x)/4);
+          green = 255;
+        }
+        blue = parseInt(position.y/4);
+      }else{
+        red = parseInt((1024+position.x)/8);
+        green = parseInt((1024-position.x)/8);
+        blue = parseInt(-position.y/4)
+      }
+      console.log("rgb("+red+","+green+","+blue+","+alpha+")");
+      return "rgb("+red+","+green+","+blue+","+alpha+")";
+    }
+    </script>
+</body>
+</html>

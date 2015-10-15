@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>creative One</title>
+      <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+      <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+      <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+      <script type="text/javascript" src="paper-full.js"></script>
+      <script type="text/javascript">
+      var socket = io();
+      var vanishing = 'V';
+      var drawing = 'D';
+      function draw(){
+        console.log(drawing);
+        socket.emit('to serial', drawing);
+      }
+
+      function vanish(){
+        console.log(vanishing);
+        socket.emit('to serial', vanishing);
+      }
+      </script>
+  </head>
+<body>
+    <!-- <div id="container" class="dark-container" style="min-width: 310px; height: 400px; margin: 0 auto">
+    </div> -->
+    <canvas id="myCanvas" width="800" height="400" style="border:0 solid #000000;"></canvas>
+    <br>
+    <button onclick="draw()">Drawing</button>
+    <button onclick="vanish()">Vanishing</button>
+
+    <script type="text/javascript">
+
+    paper.install(window);
+    var canvas = document.getElementById("myCanvas");
+    // // Create an empty project and a view for the canvas:
+    paper.setup(canvas);
+    var circleGroup = new paper.Group();
+    var path = new Path.Circle(new Point(200, 100), 50);
+    circleGroup.addChild(path);
+    //path.strokeColor = 'grey';
+    path.fillColor = 'rgb(0,255,255)';
+
+
+    socket.on('to browser', function(data)
+    {
+      var parsedData = JSON.parse(data);
+      console.log(parsedData);
+      if(parsedData.state === 68){
+        //when the accel being clicked, new ball generate
+        if(parsedData.click === 1){
+          // circleGroup.lastChild.position.x += 100;
+          // circleGroup.lastChild.position.y += 50;
+          moveCircle(circleGroup.lastChild);
+          var path = new Path.Circle(new Point(Math.random()*800, Math.random()*400), Math.random()*100);
+          //var path = new Path.Circle(new Point(Math.random()*400, Math.random()*200), Math.random()*100);
+          //path.strokeColor = 'grey';
+          circleGroup.addChild(path);
+          circleGroup.lastChild.fillColor = posToColor(parsedData);
+        } else{
+          //when the accel not being tapped
+          circleGroup.lastChild.fillColor = posToColor(parsedData);
+          console.log("finishdrawing");
+        }
+      }
+
+      if(parsedData.state === 86){
+        var color = circleGroup.lastChild.fillColor.alpha;
+        //version 2
+          console.log("catch you!");
+          if(color >= .05){
+            circleGroup.lastChild.fillColor.alpha = parseFloat( color ) - 0.00005 * parsedData.sensor
+            console.log("here");
+          }else{
+            circleGroup.lastChild.remove();
+          }
+          console.log(circleGroup.lastChild.fillColor.alpha);
+        console.log("vanish");
+      }
+      paper.view.draw();
+    });
+
+    //Also send some data back once per second
+    window.setInterval(
+        function()
+        {
+            //var msg = "Hello: " + Math.random();
+            //console.log(msg);
+            //socket.emit('to serial', msg);
+        },
+        10000
+    );
+
+    function moveCircle(circle){
+      var destination = new Point(Math.random()*800, Math.random()*400);
+
+			var timer = setInterval(function(){
+        //var vector = new Point(destination.x - )
+        console.log(destination.x);
+        console.log(circle.position.x)
+        var vector = new Point((destination.x - circle.position.x), (destination.y - circle.position.y));
+        circle.position.x += ((vector.x) / 50);
+        circle.position.y += ((vector.y) / 50);
+        console.log(circle.position.x);
+        console.log(vector.length);
+        paper.view.draw();
+        if (vector.length < 10) {
+		        clearInterval(timer);
+          }
+			}, 100);
+		}
+
+
+    //use this to trans position to color
+    function posToColor(position){
+      var red = 0;
+      var green = 0;
+      var blue = 0;
+      var alpha = 0;
+
+      alpha = getAlpha(position.sensor);
+      if(position.y <= 0){
+        if(position.x >= 0){
+          red = 255;
+          green = parseInt((1020-position.x)/4);
+        }else{
+          red = parseInt((1020+position.x)/4);
+          green = 255;
+        }
+        blue = parseInt(-position.y/4);
+      }else{
+        red = parseInt((1024+position.x)/8);
+        green = parseInt((1024-position.x)/8);
+        blue = parseInt(position.y/4)
+      }
+      console.log("rgb("+red+","+green+","+blue+","+alpha+")");
+      return "rgb("+red+","+green+","+blue+","+alpha+")";
+    }
+
+    function getAlpha(light){
+      var alpha = 0.2;
+      var max = 325;
+      var min_alpha = 0.2;
+      var max_alpha = 1;
+      var min = 25;
+      if(light<min) light = min;
+      if(light>max) light = max;
+      alpha = ((light - min) * (min_alpha - max_alpha) / (min - max)) + min_alpha;
+      return alpha
+    }
+
+    </script>
+</body>
+</html>
